@@ -49,6 +49,10 @@ func (i *IRCCat) handleCommand(event *irc.Event) {
 			fmt.Sprintf("IRCCAT_RAW=%s", event.Raw))
 
 		i.runCommand(cmd, respond_to)
+
+		if i.metrics != nil {
+			i.metrics.HandledCounter.Inc()
+		}
 	}
 }
 

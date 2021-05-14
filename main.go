@@ -27,6 +27,7 @@ type IRCCat struct {
 	irc          *irc.Connection
 	tcp          *tcplistener.TCPListener
 	signals      chan os.Signal
+	metrics 	*metrics
 }
 
 func main() {
@@ -53,6 +54,10 @@ func main() {
 
 	viper.WatchConfig()
 	viper.OnConfigChange(irccat.handleConfigChange)
+
+	if viper.IsSet("http.listeners.metrics") {
+		irccat.metrics = createMetrics()
+	}
 
 	signal.Notify(irccat.signals, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	go irccat.signalHandler()

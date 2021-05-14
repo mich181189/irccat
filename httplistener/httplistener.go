@@ -2,6 +2,7 @@ package httplistener
 
 import (
 	"github.com/juju/loggo"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
 	"github.com/thoj/go-ircevent"
 	"net/http"
@@ -43,6 +44,11 @@ func New(irc *irc.Connection) (*HTTPListener, error) {
 	if viper.IsSet("http.listeners.prometheus") {
 		log.Infof("Listening for Prometheus Alertmanager webhooks at /prometheus")
 		mux.HandleFunc("/prometheus", hl.prometheusHandler)
+	}
+
+	if viper.IsSet("http.listeners.metrics") {
+		log.Infof("Listening for Prometheus Metrics at /metrics")
+		mux.Handle("/metrics", promhttp.Handler())
 	}
 
 	hl.http.Handler = mux

@@ -16,17 +16,26 @@ func (i *IRCCat) authorisedUser(nick string) bool {
 
 func (i *IRCCat) handleJoin(e *irc.Event) {
 	if e.Arguments[0] == i.auth_channel {
+		if i.metrics != nil {
+			i.metrics.KnownUsers.Inc()
+		}
 		i.auth_users[e.Nick] = true
 	}
 }
 
 func (i *IRCCat) handlePart(e *irc.Event) {
 	if e.Arguments[0] == i.auth_channel {
+		if i.metrics != nil {
+			i.metrics.KnownUsers.Dec()
+		}
 		delete(i.auth_users, e.Nick)
 	}
 }
 
 func (i *IRCCat) handleQuit(e *irc.Event) {
+	if i.metrics != nil {
+		i.metrics.KnownUsers.Dec()
+	}
 	delete(i.auth_users, e.Nick)
 }
 
@@ -37,6 +46,9 @@ func (i *IRCCat) handleNames(e *irc.Event) {
 			// TODO: this is probably not an optimal way of trimming the mode characters.
 			nick = strings.TrimLeft(nick, "@%+")
 			i.auth_users[nick] = true
+		}
+		if i.metrics != nil {
+			i.metrics.KnownUsers.Add(float64(len(nicks)))
 		}
 	}
 }

@@ -2,9 +2,19 @@ package dispatcher
 
 import (
 	"github.com/juju/loggo"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/spf13/viper"
 	"github.com/thoj/go-ircevent"
 	"strings"
+)
+
+// it's too awkward to put this in the metrics object
+var (
+	sentMessages = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "irccat_sent_messages",
+		Help: "Sent IRC messages",
+	}, []string{"channel"})
 )
 
 // Take a string, parse out the recipients, and send to IRC.
@@ -21,6 +31,7 @@ func Send(irc *irc.Connection, msg string, log loggo.Logger, origin string) {
 		parts := strings.SplitN(msg, " ", 2)
 		if parts[0] == "#*" {
 			for _, channel := range channels {
+				sentMessages.WithLabelValues(channel).Inc()
 				irc.Privmsg(channel, replaceFormatting(parts[1]))
 			}
 		} else {
@@ -29,6 +40,7 @@ func Send(irc *irc.Connection, msg string, log loggo.Logger, origin string) {
 				if target[0] == '@' {
 					target = target[1:]
 				}
+				sentMessages.WithLabelValues(target).Add(float64(len(targets)))
 				irc.Privmsg(target, replaceFormatting(parts[1]))
 			}
 		}
@@ -39,6 +51,7 @@ func Send(irc *irc.Connection, msg string, log loggo.Logger, origin string) {
 		log.Infof("from[%s] topic[%s] %s", origin, parts[1], parts[2])
 	} else {
 		if len(channels) > 0 {
+			sentMessages.WithLabelValues(channels[0]).Inc()
 			irc.Privmsg(channels[0], replaceFormatting(msg))
 			log.Infof("from[%s] send_default[%s] %s", origin, channels[0], msg)
 		}

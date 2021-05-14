@@ -35,12 +35,22 @@ func (i *IRCCat) connectIRC(debug bool) error {
 
 	err := irccon.Connect(viper.GetString("irc.server"))
 	if err != nil {
+		if i.metrics != nil {
+			i.metrics.ConnectFailCounter.Inc()
+		}
 		return err
+	}
+
+	if i.metrics != nil {
+		i.metrics.ConnectSuccessCounter.Inc()
 	}
 
 	irccon.AddCallback("001", i.handleWelcome)
 	irccon.AddCallback("PRIVMSG", func(event *irc.Event) {
 		msg := event.Message()
+		if i.metrics != nil {
+			i.metrics.ProcessedCounter.Inc()
+		}
 		if (msg[0] == '?' || msg[0] == '!') && len(msg) > 1 {
 			go i.handleCommand(event)
 		}
@@ -60,6 +70,10 @@ func (i *IRCCat) handleWelcome(e *irc.Event) {
 	log.Infof("Negotiated IRCv3 capabilities: %v", i.irc.AcknowledgedCaps)
 	if viper.IsSet("irc.identify_pass") && viper.GetString("irc.identify_pass") != "" {
 		i.irc.SendRawf("NICKSERV IDENTIFY %s", viper.GetString("irc.identify_pass"))
+	}
+
+	if i.metrics != nil {
+		i.metrics.WelcomeCounter.Inc()
 	}
 
 	log.Infof("Connected, joining channels...")

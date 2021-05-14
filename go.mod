@@ -6,6 +6,7 @@ require (
 	github.com/deckarep/golang-set v1.7.1
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/juju/loggo v0.0.0-20190526231331-6e530bcce5d8
+	github.com/prometheus/client_golang v0.9.3
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.5.0
 	github.com/stretchr/testify v1.3.0 // indirect
